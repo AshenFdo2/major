@@ -4,6 +4,21 @@ const colors = require("colors");
 const { DateTime } = require("luxon");
 const config = require("./config");
 const { spawn } = require("child_process");
+const readline = require("readline");
+
+const banner = `\x1b[33m
+███████╗ █████╗ ██╗   ██╗ █████╗ ███╗   ██╗
+██╔════╝██╔══██╗██║   ██║██╔══██╗████╗  ██║
+███████╗███████║██║   ██║███████║██╔██╗ ██║
+╚════██║██╔══██║╚██╗ ██╔╝██╔══██║██║╚██╗██║
+███████║██║  ██║ ╚████╔╝ ██║  ██║██║ ╚████║
+╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═══╝
+                                                                                                  
+    Auto Claim Bot For Major - @savanop
+    Author  : Airdop script  : Thanks to @savan
+    Github  : https://github.com/Savanop121
+    Telegram: https://t.me/savanop121
+\x1b[0m`;
 
 class Major {
   constructor() {
@@ -27,6 +42,7 @@ class Major {
       totalBalance: 0,
     };
     this.botProcess = null;
+    this.dataFile = "data.txt";
   }
 
   headers(token = null) {
@@ -285,7 +301,7 @@ class Major {
       if (
         postResult.correct &&
         JSON.stringify(postResult.correct) ===
-          JSON.stringify(Object.values(payload))
+        JSON.stringify(Object.values(payload))
       ) {
         this.log("Durov puzzle search successful", "success");
       } else {
@@ -334,8 +350,7 @@ class Major {
     const authResult = await this.authenticate(init_data);
     if (!authResult || !authResult.access_token || !authResult.user) {
       this.log(
-        `Unable to authenticate account ${
-          accountIndex + 1
+        `Unable to authenticate account ${accountIndex + 1
         }. Auth result: ${JSON.stringify(authResult)}`,
         "error"
       );
@@ -345,8 +360,7 @@ class Major {
     const { access_token, user } = authResult;
     if (!user.id || !user.first_name) {
       this.log(
-        `Invalid user data for account ${
-          accountIndex + 1
+        `Invalid user data for account ${accountIndex + 1
         }. User data: ${JSON.stringify(user)}`,
         "error"
       );
@@ -497,9 +511,26 @@ class Major {
     }
   }
 
-  async main() {
-    const dataFile = "data.txt";
-    const data = await fs.readFile(dataFile, "utf8");
+  async addQuery(query) {
+    try {
+      await fs.appendFile(this.dataFile, query + "\n");
+      this.log("Query added successfully", "success");
+    } catch (error) {
+      this.log(`Error adding query: ${error.message}`, "error");
+    }
+  }
+
+  async resetQueries() {
+    try {
+      await fs.writeFile(this.dataFile, "");
+      this.log("All queries reset successfully", "success");
+    } catch (error) {
+      this.log(`Error resetting queries: ${error.message}`, "error");
+    }
+  }
+
+  async startTasks() {
+    const data = await fs.readFile(this.dataFile, "utf8");
     const accounts = data.split("\n").filter(Boolean);
     this.summary.totalAccounts = accounts.length;
 
@@ -538,6 +569,46 @@ class Major {
     } finally {
       // Ensure bot is stopped when the main process exits
       await this.stopTelegramBot();
+    }
+  }
+
+  async main() {
+    console.log(banner);
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    while (true) {
+      console.log("\n1. TYPE 1 FOR ADD QUERY");
+      console.log("2. TYPE 2 FOR RESET QUERY");
+      console.log("3. TYPE 3 FOR START");
+      console.log("4. TYPE 4 TO EXIT");
+
+      const choice = await new Promise((resolve) => {
+        rl.question("Enter your choice: ", resolve);
+      });
+
+      switch (choice.trim()) {
+        case "1":
+          const query = await new Promise((resolve) => {
+            rl.question("Enter the query to add: ", resolve);
+          });
+          await this.addQuery(query);
+          break;
+        case "2":
+          await this.resetQueries();
+          break;
+        case "3":
+          await this.startTasks();
+          break;
+        case "4":
+          console.log("Exiting...");
+          rl.close();
+          return;
+        default:
+          console.log("Invalid choice. Please try again.");
+      }
     }
   }
 }
