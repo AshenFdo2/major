@@ -26,8 +26,8 @@ Before you begin, ensure you have met the following requirements:
 1. Clone this repository:
 
    ```
-   git clone https://github.com/Galkurta/Major-BOT.git
-   cd Major-BOT
+   git clone https://github.com/Savanop121/major.git
+   cd major
    ```
 
 2. Install the required dependencies:
